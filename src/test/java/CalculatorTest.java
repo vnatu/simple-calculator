@@ -36,5 +36,18 @@ public class CalculatorTest {
         Assert.assertEquals(10, result);
     }
 
+    @Test
+    public void testRemainder() {
+        Calculator calculator = new Calculator();
+        int result = calculator.remainder(12, 5);
+        Assert.assertEquals(2, result);
+    }
+
+    @Test
+    public void testSqrt() {
+        Calculator calculator = new Calculator();
+        int result = calculator.sqroot(25);
+        Assert.assertEquals(5, result);
+    }
    
 }
