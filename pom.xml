@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.cglx</groupId>
+    <artifactId>simple-calculator</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <name>simple-calculator</name>
+    <properties>
+        <spring.version>4.3.11.RELEASE</spring.version>
+        <spring-security.version>4.2.3.RELEASE</spring-security.version>
+        <hibernate.version>4.3.10.Final</hibernate.version>
+        <log4j.version>2.3</log4j.version>
+        <jdk.version>1.8</jdk.version>
+        <!-- ************************ -->
+        <!-- Sonar/Reporting settings -->
+        <!-- ************************ -->
+        <!-- Sonar/Jacoco integration. Note that these properties need to be defined
+            outside the "coverage" profile because we want to be to able to execute mvn
+            sonar:sonar without passing a profile -->
+        <!-- Tells Sonar to use jacoco for coverage results -->
+        <sonar.projectKey>cglx:simple-calculator</sonar.projectKey>
+        <sonar.projectName>simple-calculator</sonar.projectName>
+        <sonar.host.url>http://sonar-01:9990</sonar.host.url>
+        <sonar.language>java</sonar.language>
+        <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
+        <sonar.sources>src/main/java</sonar.sources>
+        <sonar.tests>src/test/java</sonar.tests>
+        <sonar.java.test.binaries>target/test-classes</sonar.java.test.binaries>
+        <sonar.java.binaries>target/classes</sonar.java.binaries>
+        <sonar.coverage.reportsPath>target/coverage-reports</sonar.coverage.reportsPath>
+        <sonar.junit.coverage.reportName>jacoco-ut.exec</sonar.junit.coverage.reportName>
+        <sonar.jacoco.reportPaths>${sonar.coverage.reportsPath}/${sonar.junit.coverage.reportName}</sonar.jacoco.reportPaths>
+        <sonar.java.source>1.8</sonar.java.source>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <!-- Jacoco version to use -->
+        <jacoco.version>0.8.1</jacoco.version>
+        <!-- The Sonar Jacoco Listener for JUnit to extract coverage details per
+            test -->
+        <sonar-jacoco-listeners.version>1.4</sonar-jacoco-listeners.version>
+        <!-- Don't let Sonar execute tests. We will ask it to Maven 'sonar.dynamicAnalysis'
+            is deprecated since version 4.3 and should no longer be used. -->
+        <!-- <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis> -->
+        <!-- The system property jacoco.outputDir needs to be override on the command
+            line with an absolute path if you want to merge results from all modules.
+            Example in a Jenkisn build where ${WORKSPACE} is defined and your project
+            in the root directory of the workspace : mvn clean install -Prun-its,coverage
+            -Djacoco.outputDir=${WORKSPACE}/target Note that unfortunately using the
+            following does not work because of http://jira.codehaus.org/browse/SONAR-3427:
+            <jacoco.outputDir>${session.executionRootDirectory}/target/</jacoco.outputDir> -->
+        <jacoco.outputDir>${project.build.directory}</jacoco.outputDir>
+    </properties>
+
+    <dependencies>
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.7.0</version>
+                    <configuration>
+                        <source>${jdk.version}</source>
+                        <target>${jdk.version}</target>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>external.atlassian.jgitflow</groupId>
+                    <artifactId>jgitflow-maven-plugin</artifactId>
+                </plugin>
+                <!-- START: config-management and sonar plugin configuration -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.20</version>
+                    <configuration>
+                        <systemPropertyVariables>
+                            <config_dir>${project.build.directory}/staging/config</config_dir>
+                            <!--suppress MavenModelInspection -->
+                            <active_profile>${active_profile}</active_profile>
+                        </systemPropertyVariables>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+                <jdk>${jdk.version}}</jdk>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>${surefireArgsLine}</argLine>
+                            <!-- Specific to generate mapping between tests and covered code -->
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.sonar.java.jacoco.JUnitListener</value>
+                                </property>
+                            </properties>
+                            <!-- test failure ignore -->
+                            <testFailureIgnore>true</testFailureIgnore>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>-Xmx1024m -XX:MaxPermSize=256m ${failsafeArgsLine}
+                            </argLine>
+                            <!-- Specific to generate mapping between tests and covered code -->
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.sonar.java.jacoco.JUnitListener</value>
+                                </property>
+                            </properties>
+                            <!-- Let's put failsafe reports with surefire to have access to tests
+                                failures/success reports in sonar -->
+                            <reportsDirectory>${project.build.directory}/surefire-reports
+                            </reportsDirectory>
+                        </configuration>
+                        <version>2.20</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                        <executions>
+                            <!-- Prepares a variable, surefireArgsLine, that contains the info
+                                to be passed to the JVM hosting the code being tested. -->
+                            <execution>
+                                <id>pre-unit-tests</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <destFile>${sonar.coverage.reportsPath}/${sonar.junit.coverage.reportName}</destFile>
+                                    <propertyName>surefireArgsLine</propertyName>
+                                    <append>true</append>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>post-unit-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                                <configuration>
+                                    <dataFile>${sonar.coverage.reportsPath}/${sonar.junit.coverage.reportName}</dataFile>
+                                    <outputDirectory>${sonar.coverage.reportsPath}/jacoco-ut</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <!-- Prepares a variable, failsafeArgsLine, that contains the info
+                                to be passed to the JVM hosting the code being tested. -->
+                            <!-- execution> <id>prepare-it-agent</id> <goals> <goal>prepare-agent</goal>
+                                </goals> <configuration> <destFile>${sonar.jacoco.reportPath}</destFile>
+                                <propertyName>failsafeArgsLine</propertyName> <append>true</append> </configuration>
+                                </execution -->
+
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <dependencies>
+                <dependency>
+                    <groupId>org.codehaus.sonar-plugins.java</groupId>
+                    <artifactId>sonar-jacoco-listeners</artifactId>
+                    <version>${sonar-jacoco-listeners.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+</project>
